@@ -7,13 +7,10 @@ these signals you might be able to defeat the deadly `OOMKiller`.
 
 ### How it works
 
-This sidecar will send your container two signals: when memory usage crosses
-so called _warning_(**SIGUSR1**) and _critical_(**SIGUSR2**) thresholds. Your 
-application therefore must be able to deal with these signals by implementing
-signal handlers.
-
-You an see [here](https://github.com/ricardomaraschini/oomhero/blob/master/cmd/bloat/main.go)
-an example of how to capture the signals in Go.
+This sidecar is tailored for Java workloads and will send your container two signals: 
+when memory usage crosses so called _warning_(**SIGQUIT**) and _critical_(**SIGQUIT**) thresholds. 
+JVMs, specifically IBM's JVMs, will trigger a variety of heap, thread dumps, javacores, etc. when
+a `SIGQUIT` signal is received.
 
 ### On limits
 
@@ -26,8 +23,10 @@ The Pod below is composed by two distinct containers, the first one is called
 `bloat` and its purpose is(as the name implies) to simulate a memory leak by
 constantly allocating in a global variable. The sidecar is an `OOMHero` 
 configured to send a `SIGUSR1`(warning) when `bloat` reaches 65% and a `SIGUSR2`
-(critical) on 90%. The only pre-requisite is that both containers share the same
-process namespace, hence `shareProcessNamespace` is set to `true`.
+(critical) on 90%. There are two pre-requisites on Amazon EKS:
+1. both containers share the same process namespace, hence `shareProcessNamespace` is set to `true`.
+2. the oomhero container needs `SYS_PTRACE` capability enabled, as shown below, to allow access to the limits
+   of the other containers and to send the signal to the targeted container.
 
 
 ```yaml
@@ -57,11 +56,15 @@ spec:
     - name: oomhero
       image: quay.io/rmarasch/oomhero
       imagePullPolicy: Always
+      securityContext:
+        capabilities:
+          add:
+            - SYS_PTRACE
       env:
       - name: WARNING
         value: "65"
       - name: CRITICAL
-        value: "90" 
+        value: "90"
 ```
 
 Saving the above yaml into a file you just need to deploy it:
