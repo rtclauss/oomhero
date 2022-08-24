@@ -62,11 +62,16 @@ func main() {
 		warn := make([]*os.Process, 0)
 		crit := make([]*os.Process, 0)
 		for _, p := range ps {
+			// log.Printf("Inspecting process: %v", p.Pid)
 			limit, usage, err := mem.LimitAndUsageForProc(p)
 			if err != nil {
 				// if there is no limit or we can't read it due
 				// to permissions move on to the next process.
 				if os.IsNotExist(err) || os.IsPermission(err) {
+					// log.Printf("Error IsNotExist or IsPermission error for PID: %v", p.Pid)
+					log.Printf("Error is: %v", err)
+					log.Printf("Did you add the SYS_PTRACE seecurity context to the oomhero pod?")
+					log.Printf("Did you add 'shareProcessNamespace: true' to the pod spec?")
 					continue
 				}
 				log.Printf("error reading mem: %s", err)
