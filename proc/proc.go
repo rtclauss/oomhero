@@ -12,11 +12,11 @@ import (
 var (
 	// WarningSignal is the signal sent to the process once we reach what
 	// is considered a Warning threshold.
-	WarningSignal = syscall.SIGUSR1
+	WarningSignal = syscall.SIGQUIT
 
 	// CriticalSignal is the signal sent to the process once we reach what
 	// is considered a Critical threshold.
-	CriticalSignal = syscall.SIGUSR2
+	CriticalSignal = syscall.SIGQUIT
 )
 
 // CmdLine returns the command line for proc.
